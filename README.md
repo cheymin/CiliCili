@@ -379,3 +379,8 @@ curl http://localhost:8000/v1/responses \
 <br>
 </details>
 </details>
+
+## 友情链接
+
+- [LINUX DO - 新的理想型社区](https://linux.do/)
+
