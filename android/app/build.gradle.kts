@@ -59,8 +59,8 @@ repositories {
 // 直接在构建脚本顶层添加 embedding 依赖（不用 afterEvaluate，确保在任务配置前生效）
 dependencies {
     if (engineVersion.isNotEmpty()) {
-        "releaseApi"("io.flutter:flutter_embedding_release:1.0.0-$engineVersion")
-        "debugApi"("io.flutter:flutter_embedding_debug:1.0.0-$engineVersion")
+        "releaseImplementation"("io.flutter:flutter_embedding_release:1.0.0-$engineVersion")
+        "debugImplementation"("io.flutter:flutter_embedding_debug:1.0.0-$engineVersion")
         println("CiliCili: Added Flutter embedding dependency with engine version: $engineVersion")
     } else {
         println("CiliCili: WARNING - flutter.engineVersion not set in local.properties!")
