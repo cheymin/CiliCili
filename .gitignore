@@ -1,33 +1,57 @@
-# Python-generated files
-__pycache__/
-*.py[oc]
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
 build/
-dist/
-wheels/
-*.egg-info
-web_dist
-# Virtual environments
-.venv
-.idea
-data
-config.json
-edit
+*.iml
+.idea/
+.vscode/
 
-docker-compose-local.yml
+# Android
+android/.gradle/
+android/captures/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+android/**/GeneratedPluginRegistrant.java
+android/key.properties
+**/android/**/gradle-wrapper.jar
 
-.claude/settings.local.json
-CLAUDE.md
-AGENTS.md
-*.patch
+# iOS
+ios/Pods/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/ServiceDefinitions.json
+ios/Runner/GeneratedPluginRegistrant.*
 
-# Environment variables
-.env
-.env.local
+# macOS
+macos/Flutter/GeneratedPluginRegistrant.*
 
-# Database files
-*.db
-*.sqlite
-*.sqlite3
+# Web
+web/
 
-# Git cache
-git_cache/
+# Generated files
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+
+# Coverage
+coverage/
+
+# Lock files (keep for reproducible builds)
+# pubspec.lock
+
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
