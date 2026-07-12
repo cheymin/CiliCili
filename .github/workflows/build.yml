@@ -37,17 +37,13 @@ jobs:
           echo "Flutter SDK path: $FLUTTER_PATH"
           echo "sdk.dir=$ANDROID_HOME" > android/local.properties
           echo "flutter.sdk=$FLUTTER_PATH" >> android/local.properties
-          # 初始化 Flutter（触发引擎下载，生成 engine.stamp）
-          flutter --version
-          # 查找 engine.stamp
-          ENGINE_STAMP="$FLUTTER_PATH/bin/cache/engine.stamp"
-          echo "engine.stamp path: $ENGINE_STAMP"
-          ls -la "$FLUTTER_PATH/bin/cache/" 2>/dev/null | head -20 || echo "cache dir not found"
-          ENGINE_VERSION="NOT_FOUND"
-          if [ -f "$ENGINE_STAMP" ]; then
-            ENGINE_VERSION=$(cat "$ENGINE_STAMP" | tr -d '[:space:]')
-          fi
+          # 从 flutter --version 输出中提取 engine revision
+          ENGINE_VERSION=$(flutter --version 2>/dev/null | grep "^Engine" | awk '{print $NF}')
           echo "Engine version: $ENGINE_VERSION"
+          if [ -z "$ENGINE_VERSION" ]; then
+            echo "ERROR: Could not determine engine version!"
+            exit 1
+          fi
           echo "flutter.engineVersion=$ENGINE_VERSION" >> android/local.properties
           cat android/local.properties
 
