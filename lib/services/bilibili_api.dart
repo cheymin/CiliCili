@@ -323,18 +323,287 @@ class BilibiliApi {
   Future<Map<String, dynamic>?> pollQrCode(String qrcodeKey) async {
     final json = await _getJson(
       '$passportBaseUrl/x/passport-login/web/qrcode/poll',
-      params: {'qrcode_key': qrcodeKey},
+      params: {'qrcode_key': qrcodeKey, 'source': 'main-fe-header'},
     );
     return json;
   }
 
-  /// 获取用户信息（导航接口，需 SESSDATA）
+  /// 从登录成功的 URL 中解析并保存 Cookie
+  bool parseAndSaveLoginCookies(String url) {
+    final uri = Uri.parse(url);
+    final params = uri.queryParameters;
+    final sessdata = params['SESSDATA'];
+    final biliJct = params['bili_jct'];
+    final dedeUserId = params['DedeUserID'];
+    if (sessdata == null || sessdata.isEmpty) return false;
+    StorageService.sessdata = sessdata;
+    if (biliJct != null) StorageService.biliJct = biliJct;
+    if (dedeUserId != null) StorageService.dedeUserId = dedeUserId;
+    return true;
+  }
+
+  /// 退出登录
+  Future<void> logout() async {
+    StorageService.sessdata = null;
+    StorageService.biliJct = null;
+    StorageService.dedeUserId = null;
+  }
+
+  /// 是否已登录
+  bool get isLoggedIn {
+    final s = StorageService.sessdata;
+    return s != null && s.isNotEmpty;
+  }
+
+  /// 获取当前用户信息（导航接口，需 SESSDATA）
   Future<Map<String, dynamic>?> getUserInfo() async {
     final json = await _getJson('$baseUrl/x/web-interface/nav');
     final res = _wrap(json);
     final data = res.data;
     if (!res.isSuccess || data == null) return null;
     return data;
+  }
+
+  /// 获取用户空间信息
+  Future<Map<String, dynamic>?> getSpaceInfo(int mid) async {
+    final json = await _getJson(
+      '$baseUrl/x/space/wbi/acc/info',
+      params: {'mid': mid.toString()},
+    );
+    final res = _wrap(json);
+    return res.data;
+  }
+
+  // ============ 历史记录 ============
+
+  /// 获取观看历史
+  Future<List<Video>> getHistory({int page = 1, int pageSize = 20}) async {
+    final json = await _getJson(
+      '$baseUrl/x/v2/history',
+      params: {
+        'pn': page.toString(),
+        'ps': pageSize.toString(),
+      },
+    );
+    final res = _wrap(json);
+    final data = res.data;
+    if (!res.isSuccess || data == null) return const [];
+    final list = data['list'];
+    if (list is! List) return const [];
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map((e) {
+          final history = e['history'] as Map<String, dynamic>?;
+          final title = e['title'] as String? ?? history?['title'] as String?;
+          final cover = e['cover'] as String? ?? history?['cover'] as String?;
+          final uri = e['uri'] as String? ?? history?['uri'] as String?;
+          String? bvid;
+          if (uri != null && uri.contains('video/')) {
+            final match = RegExp(r'BV[0-9A-Za-z]+').firstMatch(uri);
+            bvid = match?.group(0);
+          }
+          bvid ??= e['bvid'] as String?;
+          return Video(
+            bvid: bvid,
+            aid: _parseInt(e['aid'] ?? history?['aid']),
+            title: title,
+            pic: cover,
+            view: _parseInt(e['progress']),
+            duration: _parseInt(e['duration'] ?? history?['duration']),
+            name: (e['author_name'] as String?) ?? (history?['owner_name'] as String?),
+          );
+        })
+        .where((v) => v.bvid?.isNotEmpty == true)
+        .toList();
+  }
+
+  // ============ 收藏夹 ============
+
+  /// 获取用户收藏夹列表
+  Future<List<Map<String, dynamic>>> getFavList(int mid) async {
+    final json = await _getJson(
+      '$baseUrl/x/v3/fav/folder/created/list-all',
+      params: {'up_mid': mid.toString()},
+    );
+    final res = _wrap(json);
+    final data = res.data;
+    if (!res.isSuccess || data == null) return const [];
+    final list = data['list'];
+    if (list is! List) return const [];
+    return list.whereType<Map<String, dynamic>>().toList();
+  }
+
+  /// 获取收藏夹内容
+  Future<List<Video>> getFavVideos(int mediaId, {int page = 1}) async {
+    final json = await _getJson(
+      '$baseUrl/x/v3/fav/resource/list',
+      params: {
+        'media_id': mediaId.toString(),
+        'pn': page.toString(),
+        'ps': '20',
+      },
+    );
+    final res = _wrap(json);
+    final data = res.data;
+    if (!res.isSuccess || data == null) return const [];
+    final medias = data['medias'];
+    if (medias is! List) return const [];
+    return medias
+        .whereType<Map<String, dynamic>>()
+        .map((e) => Video(
+              bvid: e['bvid'] as String?,
+              aid: _parseInt(e['id']),
+              title: e['title'] as String?,
+              pic: e['cover'] as String? ?? (e['upper']?['face'] as String?),
+              duration: _parseInt(e['duration']),
+              name: e['upper']?['name'] as String?,
+              view: _parseInt(e['cnt_info']?['play']),
+            ))
+        .where((v) => v.bvid?.isNotEmpty == true)
+        .toList();
+  }
+
+  // ============ 互动（点赞/投币/收藏） ============
+
+  /// 点赞视频
+  Future<bool> likeVideo(int aid, bool like) async {
+    final json = await _postForm(
+      '$baseUrl/x/web-interface/like/like',
+      params: {
+        'aid': aid.toString(),
+        'like': like ? '1' : '2',
+        'csrf': StorageService.biliJct ?? '',
+      },
+    );
+    return json?['code'] == 0;
+  }
+
+  /// 投币
+  Future<bool> coinVideo(int aid, {int num = 1, bool like = false}) async {
+    final json = await _postForm(
+      '$baseUrl/x/web-interface/coin/add',
+      params: {
+        'aid': aid.toString(),
+        'multiply': num.toString(),
+        'select_like': like ? '1' : '0',
+        'csrf': StorageService.biliJct ?? '',
+      },
+    );
+    return json?['code'] == 0;
+  }
+
+  /// 添加/取消收藏
+  Future<bool> favVideo(int aid, int mediaId, bool add) async {
+    final json = await _postForm(
+      '$baseUrl/x/v3/fav/resource/deal',
+      params: {
+        'rid': aid.toString(),
+        'type': '2',
+        'add_ids': add ? mediaId.toString() : '',
+        'del_ids': add ? '' : mediaId.toString(),
+        'csrf': StorageService.biliJct ?? '',
+      },
+    );
+    return json?['code'] == 0;
+  }
+
+  /// 关注用户
+  Future<bool> followUser(int mid, bool follow) async {
+    final json = await _postForm(
+      '$baseUrl/x/relation/modify',
+      params: {
+        'fid': mid.toString(),
+        'act': follow ? '1' : '2',
+        'csrf': StorageService.biliJct ?? '',
+      },
+    );
+    return json?['code'] == 0;
+  }
+
+  // ============ 动态 ============
+
+  /// 获取关注动态
+  Future<List<Video>> getFollowDynamic({int page = 1}) async {
+    final json = await _getJson(
+      '$baseUrl/x/polymer/web-dynamic/v1/feed/all',
+      params: {
+        'page': page.toString(),
+      },
+    );
+    final res = _wrap(json);
+    final data = res.data;
+    if (!res.isSuccess || data == null) return const [];
+    final items = data['items'];
+    if (items is! List) return const [];
+    return items
+        .whereType<Map<String, dynamic>>()
+        .where((e) => e['type'] == 'DYNAMIC_TYPE_AV' || e['type'] == 'DYNAMIC_TYPE_LIVE_RCMD')
+        .map((e) {
+          final module = e['modules'] as Map<String, dynamic>?;
+          final author = module?['module_author'] as Map<String, dynamic>?;
+          final dynamicData = module?['module_dynamic'] as Map<String, dynamic>?;
+          final major = dynamicData?['major'] as Map<String, dynamic>?;
+          final archive = major?['archive'] as Map<String, dynamic>?;
+          return Video(
+            bvid: archive?['bvid'] as String?,
+            aid: _parseInt(archive?['aid']),
+            title: archive?['title'] as String?,
+            pic: archive?['cover'] as String?,
+            name: author?['name'] as String?,
+            duration: _parseInt(archive?['duration']),
+            view: _parseInt(archive?['stat']?['play']),
+          );
+        })
+        .where((v) => v.bvid?.isNotEmpty == true)
+        .toList();
+  }
+
+  // ============ 评论 ============
+
+  /// 获取评论列表
+  Future<List<Map<String, dynamic>>> getComments(
+    int oid, {
+    int type = 1,
+    int next = 0,
+    int ps = 20,
+  }) async {
+    final json = await _getJson(
+      '$baseUrl/x/v2/reply/main',
+      params: {
+        'oid': oid.toString(),
+        'type': type.toString(),
+        'next': next.toString(),
+        'ps': ps.toString(),
+      },
+    );
+    final res = _wrap(json);
+    final data = res.data;
+    if (!res.isSuccess || data == null) return const [];
+    final replies = data['replies'];
+    if (replies is! List) return const [];
+    return replies.whereType<Map<String, dynamic>>().toList();
+  }
+
+  // ============ 发送 POST 请求（form-urlencoded） ============
+
+  Future<Map<String, dynamic>?> _postForm(
+    String url, {
+    Map<String, String>? params,
+  }) async {
+    try {
+      final uri = Uri.parse(url);
+      final response = await http.post(
+        uri,
+        headers: {
+          ..._headers,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params,
+      );
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
   }
 
   // ============ 辅助方法 ============

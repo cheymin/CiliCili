@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'about_screen.dart';
 import 'category_screen.dart';
 import 'home_feed_screen.dart';
+import 'mine_screen.dart';
 import 'search_screen.dart';
 import '../utils/theme.dart';
 import '../widgets/video_card.dart';
@@ -22,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
     HomeFeedScreen(),
     CategoryScreen(),
     SearchScreen(),
+    MineScreen(),
     AboutScreen(),
   ];
 
@@ -29,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
     (icon: Icons.home_outlined, activeIcon: Icons.home, label: '首页'),
     (icon: Icons.category_outlined, activeIcon: Icons.category, label: '分区'),
     (icon: Icons.search, activeIcon: Icons.search, label: '搜索'),
+    (icon: Icons.person_outline, activeIcon: Icons.person, label: '我的'),
     (icon: Icons.info_outline, activeIcon: Icons.info, label: '关于'),
   ];
 
