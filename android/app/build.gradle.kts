@@ -1,8 +1,8 @@
 import java.util.Properties
 
 plugins {
-    id("dev.flutter.flutter-gradle-plugin")
     id("com.android.application")
+    id("dev.flutter.flutter-gradle-plugin")
 }
 
 val localProperties = Properties()
