@@ -23,9 +23,11 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
   Video? _video;
   List<Video> _relatedVideos = [];
   VideoPlayUrl? _playUrl;
+  List<Map<String, dynamic>> _comments = [];
 
   bool _loading = true;
   bool _loadingPlayUrl = false;
+  bool _loadingComments = false;
   String? _error;
 
   int _currentQuality = 64;
@@ -53,6 +55,9 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
       if (video != null && video.cid != null) {
         _loadPlayUrl();
       }
+      if (video != null && video.aid != null) {
+        _loadComments(video.aid!);
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -79,6 +84,21 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _loadingPlayUrl = false);
+    }
+  }
+
+  Future<void> _loadComments(int aid) async {
+    setState(() => _loadingComments = true);
+    try {
+      final list = await _api.getComments(aid);
+      if (!mounted) return;
+      setState(() {
+        _comments = list;
+        _loadingComments = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingComments = false);
     }
   }
 
@@ -164,6 +184,8 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
                   _buildStats(),
                   const SizedBox(height: 16),
                   _buildDesc(),
+                  const SizedBox(height: 16),
+                  _buildComments(),
                 ],
               ),
             ),
@@ -346,6 +368,198 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
           Text(
             desc,
             style: TextStyle(color: cs.onSurfaceVariant, height: 1.5),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildComments() {
+    final cs = Theme.of(context).colorScheme;
+    if (_loadingComments) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        child: const LoadingView(),
+      );
+    }
+    if (_comments.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.chat_bubble_outline,
+                size: 40, color: cs.onSurfaceVariant.withOpacity(0.3)),
+            const SizedBox(height: 8),
+            Text('还没有评论，快来抢沙发！',
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+          ],
+        ),
+      );
+    }
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.comment_outlined,
+                  size: 18, color: cs.onSurfaceVariant),
+              const SizedBox(width: 6),
+              Text(
+                '评论 ${_comments.length > 0 ? "(${_comments.length})" : ""}',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...(_comments.take(20).map((c) => _buildCommentItem(cs, c))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommentItem(ColorScheme cs, Map<String, dynamic> comment) {
+    final member = comment['member'] as Map<String, dynamic>?;
+    final content = comment['content'] as Map<String, dynamic>?;
+    final uname = member?['uname'] as String? ?? '匿名用户';
+    final avatar = member?['avatar'] as String?;
+    final message = content?['message'] as String? ?? '';
+    final likeCount = _parseInt(comment['like']);
+    final replyCount = _parseInt(comment['rcount']);
+    final ctime = _parseInt(comment['ctime']);
+
+    String timeStr = '';
+    if (ctime != null) {
+      final dt = DateTime.fromMillisecondsSinceEpoch(ctime * 1000);
+      final diff = DateTime.now().difference(dt);
+      if (diff.inDays > 0) {
+        timeStr = '${diff.inDays}天前';
+      } else if (diff.inHours > 0) {
+        timeStr = '${diff.inHours}小时前';
+      } else if (diff.inMinutes > 0) {
+        timeStr = '${diff.inMinutes}分钟前';
+      } else {
+        timeStr = '刚刚';
+      }
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppTheme.accountColor(uname),
+              shape: BoxShape.circle,
+            ),
+            child: avatar != null && avatar.isNotEmpty
+                ? ClipOval(
+                    child: CachedNetworkImage(
+                      imageUrl: avatar,
+                      fit: BoxFit.cover,
+                      errorWidget: (_, __, ___) => Center(
+                        child: Text(
+                          uname.characters.first,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                : Center(
+                    child: Text(
+                      uname.characters.first,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      uname,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      timeStr,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.4,
+                    color: cs.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.thumb_up_outlined,
+                        size: 14, color: cs.onSurfaceVariant),
+                    const SizedBox(width: 4),
+                    Text(
+                      likeCount != null && likeCount > 0
+                          ? AppTheme.formatCount(likeCount)
+                          : '点赞',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Icon(Icons.chat_bubble_outline,
+                        size: 14, color: cs.onSurfaceVariant),
+                    const SizedBox(width: 4),
+                    Text(
+                      replyCount != null && replyCount > 0
+                          ? AppTheme.formatCount(replyCount)
+                          : '回复',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
