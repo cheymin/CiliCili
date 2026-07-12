@@ -10,7 +10,7 @@ class AboutScreen extends StatelessWidget {
 
   static const String projectUrl = 'https://github.com/cheymin/CiliCili';
   static const String author = 'Cheymin';
-  static const String version = '1.0.0';
+  static const String version = '2.0.0';
   static const String appName = 'CiliCili';
   static const String buildDate = '2026-07-12';
 
@@ -87,7 +87,7 @@ class AboutScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     OutlinedButton.icon(
-                      onPressed: _showUpdateDialog,
+                      onPressed: () => _showUpdateDialog(context),
                       icon: const Icon(Icons.update, size: 18),
                       label: const Text('检查更新'),
                     ),
@@ -198,17 +198,15 @@ class AboutScreen extends StatelessWidget {
     }
   }
 
-  void _showUpdateDialog() {
-    final ctx = (WidgetsBinding.instance.focusManager.primaryFocus?.context);
-    if (ctx == null) return;
+  void _showUpdateDialog(BuildContext context) {
     showDialog(
-      context: ctx,
-      builder: (context) => AlertDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
         title: const Text('检查更新'),
         content: Text(FunnyMessages.unknown),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('好的'),
           ),
         ],
