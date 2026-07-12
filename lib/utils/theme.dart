@@ -36,6 +36,14 @@ class ThemeProvider extends ChangeNotifier {
 
   bool get isGoogle => _uiStyle == UiStyle.google;
   bool get isApple => _uiStyle == UiStyle.apple;
+
+  Future<void> init() async {
+    _loadFromStorage();
+  }
+
+  void _loadFromStorage() {
+    // 后续可扩展：从 StorageService 读取持久化设置
+  }
 }
 
 /// 主题工厂：根据 [UiStyle] 与亮度生成对应的 [ThemeData]

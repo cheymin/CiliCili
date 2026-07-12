@@ -254,6 +254,41 @@ class Video {
       tname: json['tname'] as String? ?? (args?['rname'] as String?),
     );
   }
+
+  String get coverUrl {
+    final url = pic ?? '';
+    if (url.isEmpty) return '';
+    if (url.startsWith('//')) return 'https:$url';
+    if (url.startsWith('http')) return url;
+    return 'https://$url';
+  }
+
+  String get upName => name ?? '未知UP';
+
+  String get description => desc ?? '';
+
+  String get pubDateFormatted {
+    if (pubdate == null) return '';
+    final dt = DateTime.fromMillisecondsSinceEpoch(pubdate! * 1000);
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inDays > 365) {
+      return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+    }
+    if (diff.inDays > 30) {
+      return '${diff.inDays ~/ 30}个月前';
+    }
+    if (diff.inDays > 0) {
+      return '${diff.inDays}天前';
+    }
+    if (diff.inHours > 0) {
+      return '${diff.inHours}小时前';
+    }
+    if (diff.inMinutes > 0) {
+      return '${diff.inMinutes}分钟前';
+    }
+    return '刚刚';
+  }
 }
 
 /// 安全将 dynamic 转为 int（兼容 int / double / String）
