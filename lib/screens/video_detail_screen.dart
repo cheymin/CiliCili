@@ -102,6 +102,14 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
     }
   }
 
+  int? _safeParseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
   Future<void> _openInBrowser() async {
     final url = 'https://www.bilibili.com/video/${widget.bvid}';
     final uri = Uri.parse(url);
@@ -435,9 +443,9 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
     final uname = member?['uname'] as String? ?? '匿名用户';
     final avatar = member?['avatar'] as String?;
     final message = content?['message'] as String? ?? '';
-    final likeCount = _parseInt(comment['like']);
-    final replyCount = _parseInt(comment['rcount']);
-    final ctime = _parseInt(comment['ctime']);
+    final likeCount = _safeParseInt(comment['like']);
+    final replyCount = _safeParseInt(comment['rcount']);
+    final ctime = _safeParseInt(comment['ctime']);
 
     String timeStr = '';
     if (ctime != null) {

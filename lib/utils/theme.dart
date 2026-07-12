@@ -162,7 +162,7 @@ class AppTheme {
         centerTitle: true,
         surfaceTintColor: Colors.transparent,
       ),
-      cardTheme: CardThemeData(
+      cardTheme: CardTheme(
         color: scheme.surface,
         elevation: isDark ? 1 : 2,
         clipBehavior: Clip.antiAlias,
@@ -300,7 +300,7 @@ class AppTheme {
           fontFamily: fontFamily,
         ),
       ),
-      cardTheme: CardThemeData(
+      cardTheme: CardTheme(
         color: scheme.surface,
         elevation: 0,
         margin: EdgeInsets.zero,
