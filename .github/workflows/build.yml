@@ -29,6 +29,12 @@ jobs:
           flutter-version: '3.24.0'
           channel: 'stable'
 
+      - name: Configure local.properties
+        run: |
+          FLUTTER_PATH=$(which flutter | xargs readlink -f | xargs dirname | xargs dirname)
+          echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+          echo "flutter.sdk=$FLUTTER_PATH" >> android/local.properties
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -56,13 +62,15 @@ jobs:
             # CiliCili v${{ github.ref_name }}
 
             ## 更新内容
-            - 初始版本发布
-            - 首页推荐、热门、排行榜
-            - 视频分区浏览
-            - 搜索功能
-            - 视频详情页
-            - 双风格主题系统（Material 3 + iOS）
-            - 搞怪错误提示
+            - 🔐 二维码扫码登录
+            - 📺 我的页面：用户信息、历史记录、收藏夹、动态
+            - 💬 视频评论列表
+            - 👍 点赞/投币/收藏/关注
+            - 🏠 首页推荐、热门、排行榜
+            - 📂 视频分区浏览
+            - 🔍 搜索功能 + 热搜词
+            - 🎨 双风格主题（Material 3 + iOS）
+            - 😆 搞怪错误提示
 
             ## 下载
             | 架构 | 文件 |
