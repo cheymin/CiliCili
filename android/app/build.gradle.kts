@@ -1,9 +1,8 @@
 import java.util.Properties
 
 plugins {
-    id("com.android.application")
-    id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.android.application")
 }
 
 val localProperties = Properties()
@@ -18,7 +17,11 @@ val flutterVersionName = localProperties.getProperty("flutter.versionName") ?: "
 // 读取 Flutter 引擎版本
 val flutterSdkPath = localProperties.getProperty("flutter.sdk") ?: ""
 val engineVersionFile = file("$flutterSdkPath/bin/cache/engine.stamp")
-val engineVersion = if (engineVersionFile.exists()) engineVersionFile.readText().trim() else ""
+val engineVersion = if (engineVersionFile.exists()) {
+    engineVersionFile.readText().trim()
+} else {
+    ""
+}
 
 android {
     namespace = "com.cheymin.cilicili"
@@ -28,10 +31,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
-    }
-
-    kotlinOptions {
-        jvmTarget = "1.8"
     }
 
     sourceSets {
@@ -60,16 +59,13 @@ android {
     }
 }
 
-// Flutter 引擎 Maven 仓库
-repositories {
-    maven { url = uri("https://storage.googleapis.com/download.flutter.io") }
-}
-
-// 显式添加 Flutter embedding 依赖（确保 FlutterActivity 可被编译）
+// 显式添加 Flutter embedding 依赖到 api 配置（确保 FlutterActivity 可被编译）
+// Flutter Gradle plugin 默认只在无插件项目添加此依赖；有插件时由插件传递，
+// 但某些情况下传递失败会导致 FlutterActivity 无法解析。
 dependencies {
     if (engineVersion.isNotEmpty()) {
-        "releaseImplementation"("io.flutter:flutter_embedding_release:1.0.0-$engineVersion")
-        "debugImplementation"("io.flutter:flutter_embedding_debug:1.0.0-$engineVersion")
+        "releaseApi"("io.flutter:flutter_embedding_release:1.0.0-$engineVersion")
+        "debugApi"("io.flutter:flutter_embedding_debug:1.0.0-$engineVersion")
     }
 }
 
