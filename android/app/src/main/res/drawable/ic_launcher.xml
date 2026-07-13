@@ -3,10 +3,45 @@
     android:height="48dp"
     android:viewportWidth="48"
     android:viewportHeight="48">
+
+    <!-- B 站粉背景 -->
     <path
-        android:fillColor="#1A73E8"
+        android:fillColor="#FB7299"
         android:pathData="M0,0 L48,0 L48,48 L0,48 Z" />
+
+    <!-- 天线 -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round"
+        android:pathData="M17,17 L13,11" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round"
+        android:pathData="M31,17 L35,11" />
+
+    <!-- 电视机身 -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5"
+        android:fillColor="#00000000"
+        android:pathData="M11,18 L37,18 Q40,18 40,21 L40,37 Q40,40 37,40 L11,40 Q8,40 8,37 L8,21 Q8,18 11,18 Z" />
+
+    <!-- 中央播放三角 -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M16,14 L34,24 L16,34 Z" />
+        android:pathData="M22,24 L31,29 L22,34 Z" />
+
+    <!-- 底座 -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M15,42 L14,45" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M33,42 L34,45" />
 </vector>

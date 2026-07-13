@@ -3,10 +3,54 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!-- 天线（两根斜线，从电视顶部向上发散） -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:pathData="M40,38 L30,24" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:pathData="M68,38 L78,24" />
+    <!-- 天线顶端的小圆点 -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M54,30 L78,54 L54,78 L30,54 Z" />
+        android:pathData="M30,24 m-2,0 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0" />
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M48,42 L66,54 L48,66 Z" />
+        android:pathData="M78,24 m-2,0 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0" />
+
+    <!-- 电视机身（圆角矩形） -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:fillColor="#00000000"
+        android:pathData="M26,40 L82,40 Q88,40 88,46 L88,78 Q88,84 82,84 L26,84 Q20,84 20,78 L20,46 Q20,40 26,40 Z" />
+
+    <!-- 屏幕内圆角矩形（轻微内嵌效果） -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.2"
+        android:fillColor="#00000000"
+        android:pathData="M28,46 L80,46 Q83,46 83,49 L83,74 Q83,77 80,77 L28,77 Q25,77 25,74 L25,49 Q25,46 28,46 Z" />
+
+    <!-- 中央播放三角（B 站标志性小电视屏幕里的播放按钮） -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M51,54 L66,62 L51,70 Z" />
+
+    <!-- 底部底座（两条小腿） -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M36,88 L34,94" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M72,88 L74,94" />
 </vector>
