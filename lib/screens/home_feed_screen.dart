@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/video.dart';
 import '../services/bilibili_api.dart';
 import '../utils/error_messages.dart';
+import '../utils/grid.dart';
+import '../utils/style.dart';
 import '../widgets/state_views.dart';
 import '../widgets/video_card.dart';
 import 'video_detail_screen.dart';
@@ -153,17 +155,20 @@ class _HomeFeedScreenState extends State<HomeFeedScreen>
     if (error != null) return ErrorView(message: error, onRetry: onRetry);
     if (videos.isEmpty) return const EmptyView();
 
+    // 网格布局移植自 PiliPlus：封面按 16:10 计算，文字区固定加 62px。
+    // 列数随宽度自适应——手机 2 列 / 平板 3~4 列 / 电视 5~6 列。
+    final textScale = MediaQuery.textScalerOf(context).scale(62);
     return RefreshIndicator(
       onRefresh: () async => onRetry(),
       child: GridView.builder(
-        padding: const EdgeInsets.all(12),
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          // 卡片更小更密：手机 2 列、平板 3~4 列、电视 5~6 列
-          maxCrossAxisExtent: 200,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          // 封面 16:9 + 标题两行，整体略高于封面
-          childAspectRatio: 0.78,
+        padding: const EdgeInsets.symmetric(
+            horizontal: Style.safeSpace, vertical: Style.cardSpace),
+        gridDelegate: SliverGridDelegateWithExtentAndRatio(
+          maxCrossAxisExtent: Style.recommendCardWidth,
+          mainAxisSpacing: Style.cardSpace,
+          crossAxisSpacing: Style.cardSpace,
+          childAspectRatio: Style.aspectRatio,
+          mainAxisExtent: textScale,
         ),
         itemCount: videos.length,
         itemBuilder: (context, index) {
