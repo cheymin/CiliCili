@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'storage.dart';
+
 /// UI 风格枚举：Google Material 3 或 Apple iOS 风格
 enum UiStyle { google, apple }
 
@@ -13,24 +15,32 @@ class ThemeProvider extends ChangeNotifier {
   ThemeMode get themeMode => _themeMode;
   set themeMode(ThemeMode mode) {
     _themeMode = mode;
+    StorageService.themeMode = switch (mode) {
+      ThemeMode.light => 'light',
+      ThemeMode.dark => 'dark',
+      ThemeMode.system => 'system',
+    };
     notifyListeners();
   }
 
   UiStyle get uiStyle => _uiStyle;
   set uiStyle(UiStyle style) {
     _uiStyle = style;
+    StorageService.uiStyle = style == UiStyle.apple ? 'apple' : 'google';
     notifyListeners();
   }
 
   Color? get customPrimaryColor => _customPrimaryColor;
   set customPrimaryColor(Color? color) {
     _customPrimaryColor = color;
+    StorageService.customPrimaryColor = color?.toARGB32();
     notifyListeners();
   }
 
   String? get customFontFamily => _customFontFamily;
   set customFontFamily(String? family) {
     _customFontFamily = family;
+    StorageService.customFontFamily = family;
     notifyListeners();
   }
 
@@ -46,7 +56,19 @@ class ThemeProvider extends ChangeNotifier {
   }
 
   void _loadFromStorage() {
-    // 后续可扩展：从 StorageService 读取持久化设置
+    switch (StorageService.themeMode) {
+      case 'light':
+        _themeMode = ThemeMode.light;
+      case 'dark':
+        _themeMode = ThemeMode.dark;
+      default:
+        _themeMode = ThemeMode.system;
+    }
+    _uiStyle =
+        StorageService.uiStyle == 'apple' ? UiStyle.apple : UiStyle.google;
+    final c = StorageService.customPrimaryColor;
+    _customPrimaryColor = c == null ? null : Color(c);
+    _customFontFamily = StorageService.customFontFamily;
   }
 }
 

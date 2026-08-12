@@ -8,6 +8,7 @@ import '../utils/theme.dart';
 import '../widgets/state_views.dart';
 import '../widgets/video_card.dart';
 import 'login_screen.dart';
+import 'settings_screen.dart';
 import 'video_detail_screen.dart';
 
 class MineScreen extends StatefulWidget {
@@ -207,6 +208,16 @@ class _MineScreenState extends State<MineScreen>
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
+        actions: [
+          IconButton(
+            tooltip: '设置',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Column(
         children: [
