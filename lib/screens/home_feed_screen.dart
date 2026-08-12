@@ -8,6 +8,7 @@ import '../utils/style.dart';
 import '../widgets/state_views.dart';
 import '../widgets/video_card.dart';
 import 'video_detail_screen.dart';
+import 'video_detail_screen.dart';
 
 class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key});

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import 'screens/home_screen.dart';
 import 'services/bili_dio.dart';
+import 'providers/player_provider.dart';
 import 'utils/account_manager.dart';
 import 'utils/storage.dart';
 import 'utils/theme.dart';
@@ -20,8 +21,11 @@ void main() {
     await _safeInit();
 
     runApp(
-      ChangeNotifierProvider(
-        create: (_) => ThemeProvider()..syncInit(),
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => ThemeProvider()..syncInit()),
+          ChangeNotifierProvider(create: (_) => PlayerProvider()),
+        ],
         child: const CiliCiliApp(),
       ),
     );
