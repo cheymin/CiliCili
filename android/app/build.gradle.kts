@@ -58,8 +58,10 @@ android {
     buildTypes {
         getByName("release") {
             signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = true
-            isShrinkResources = true
+            // 暂时关闭 R8 混淆/资源裁剪：定位"装机即闪退"根因。
+            // R8 full mode 会裁掉 Flutter 启动所需的类，是 release-only 崩溃的头号嫌疑。
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
