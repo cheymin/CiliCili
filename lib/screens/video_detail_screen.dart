@@ -403,8 +403,8 @@ class _VideoPlayerWrapperState extends State<_VideoPlayerWrapper> {
     return Stack(
       children: [
         // 播放器
-        ChangeNotifierBuilder<PlayerProvider>(
-          builder: (context, player) {
+        Consumer<PlayerProvider>(
+          builder: (context, player, _) {
             return player.buildPlayer(
               width: double.infinity,
               height: double.infinity,
