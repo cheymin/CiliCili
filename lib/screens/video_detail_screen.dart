@@ -71,15 +71,14 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
 
     try {
       final playUrl = await _api.getPlayUrl(
-        aid: _video!.aid,
-        cid: widget.cid ?? _video!.cid,
-        fnval: 16 | 64, // DASH + 高码率
+        widget.bvid,
+        widget.cid ?? _video!.cid!,
       );
 
       final playerProvider = context.read<PlayerProvider>();
       await playerProvider.play(
-        playUrl.video?.baseUrl ?? '',
-        audioUrl: playUrl.audio?.baseUrl,
+        playUrl?.video?.baseUrl ?? '',
+        audioUrl: playUrl?.audio?.baseUrl,
         autoPlay: true,
       );
     } catch (e) {
@@ -156,7 +155,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
               // 标题
               Text(
                 _video!.title ?? '无标题',
-                style: cs.textTheme.titleMedium?.copyWith(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   height: 1.3,
                 ),
@@ -169,10 +168,10 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
                 children: [
                   CircleAvatar(
                     radius: 16,
-                    backgroundImage: _video!.owner?.faceUrl != null
-                        ? NetworkImage(_video!.owner!.faceUrl!)
+                    backgroundImage: _video!.face != null
+                        ? NetworkImage(_video!.face!)
                         : null,
-                    child: _video!.owner?.faceUrl == null
+                    child: _video!.face == null
                         ? const Icon(Icons.person, size: 20)
                         : null,
                   ),
@@ -180,7 +179,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
                   Expanded(
                     child: Text(
                       _video!.upName,
-                      style: cs.textTheme.bodyMedium,
+                      style: Theme.of(context).textTheme.bodyMedium,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -201,8 +200,8 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
               if (_video!.pubDate != null) ...[
                 const SizedBox(height: 4),
                 Text(
-                  '发布于 ${AppTheme.formatDate(_video!.pubDate!)}',
-                  style: cs.textTheme.labelSmall,
+                  '发布于 ${_video!.pubDate != null ? DateTime.fromMillisecondsSinceEpoch(_video!.pubDate! * 1000).toString().split(' ')[0] : ""}',
+                  style: Theme.of(context).textTheme.labelSmall,
                 ),
               ],
             ],
@@ -261,7 +260,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
           if (_video?.description != null && _video!.description!.isNotEmpty)
             Text(
               _video!.description!,
-              style: cs.textTheme.bodyMedium,
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
           const SizedBox(height: 16),
           // 标签

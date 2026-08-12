@@ -243,8 +243,8 @@ class PlayerProvider extends ChangeNotifier {
           if (_controller != null && _error == null)
             Video(
               controller: _controller!,
-              fill: BoxFit.contain,
-              controls: _buildControls,
+              color: Colors.black,
+              // 使用默认控制条
             )
           else if (_error != null)
             Center(
@@ -448,7 +448,7 @@ class _VideoControlsState extends State<VideoControls> {
                             for (final speed in [0.5, 0.75, 1.0, 1.25, 1.5, 2.0])
                               PopupMenuItem(
                                 value: speed,
-                                child: Text('$speedx',
+                                child: Text(''$speed x'',
                                     style: TextStyle(
                                         color: speed ==
                                                 widget.playbackSpeed
