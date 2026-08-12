@@ -31,6 +31,11 @@ class _PlayerWidgetState extends State<PlayerWidget> {
   bool _mediaKitReady = false;
   String? _error;
 
+  static const _referer = 'https://www.bilibili.com';
+  static const _ua =
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+      '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
   @override
   void initState() {
     super.initState();
@@ -51,7 +56,9 @@ class _PlayerWidgetState extends State<PlayerWidget> {
   }
 
   void _createPlayer() {
-    if (!_mediaKitReady || widget.videoUrl == null || widget.videoUrl!.isEmpty) {
+    if (!_mediaKitReady ||
+        widget.videoUrl == null ||
+        widget.videoUrl!.isEmpty) {
       return;
     }
     try {
@@ -69,24 +76,40 @@ class _PlayerWidgetState extends State<PlayerWidget> {
   }
 
   Future<void> _open() async {
-    if (_player == null || widget.videoUrl == null || widget.videoUrl!.isEmpty) return;
+    final player = _player;
+    if (player == null ||
+        widget.videoUrl == null ||
+        widget.videoUrl!.isEmpty) {
+      return;
+    }
     try {
-      if (widget.audioUrl != null && widget.audioUrl!.isNotEmpty) {
-        await _player!.open(Media(
-          widget.videoUrl!,
-          httpHeaders: {'Referer': 'https://www.bilibili.com'},
-          extras: {'audio-file': widget.audioUrl},
-        ));
-      } else {
-        await _player!.open(Media(
-          widget.videoUrl!,
-          httpHeaders: {'Referer': 'https://www.bilibili.com'},
-        ));
+      final platform = player.platform;
+      // B 站 DASH 视频/音频是分离的两条流：video.baseUrl 只有画面没有声音。
+      // 必须通过 mpv 的 audio-files 属性把音频流挂上去，否则播放无声。
+      if (platform is NativePlayer) {
+        // 给所有 http 请求带上 Referer / UA，否则 B 站 CDN 会 403
+        await platform.setProperty(
+          'http-header-fields',
+          'Referer: $_referer,User-Agent: $_ua',
+        );
+        if (widget.audioUrl != null && widget.audioUrl!.isNotEmpty) {
+          // 先清空再设置，避免切集时叠加旧音轨
+          await platform.setProperty('audio-files', '');
+          await platform.setProperty('audio-files', widget.audioUrl!);
+        }
       }
-      if (widget.autoPlay) {
-        await _player!.play();
-      }
-      await _player!.setRate(widget.speed);
+
+      await player.open(
+        Media(
+          widget.videoUrl!,
+          httpHeaders: const {
+            'Referer': _referer,
+            'User-Agent': _ua,
+          },
+        ),
+        play: widget.autoPlay,
+      );
+      await player.setRate(widget.speed);
       if (mounted) setState(() => _initialized = true);
     } catch (e) {
       if (mounted) setState(() => _error = '播放失败: $e');
@@ -96,7 +119,9 @@ class _PlayerWidgetState extends State<PlayerWidget> {
   @override
   void didUpdateWidget(covariant PlayerWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_player != null && (oldWidget.videoUrl != widget.videoUrl || oldWidget.audioUrl != widget.audioUrl)) {
+    if (_player != null &&
+        (oldWidget.videoUrl != widget.videoUrl ||
+            oldWidget.audioUrl != widget.audioUrl)) {
       _open();
     }
     if (_player != null && oldWidget.speed != widget.speed) {
@@ -137,12 +162,12 @@ class _PlayerWidgetState extends State<PlayerWidget> {
           if (_mediaKitReady && _controller != null && _error == null)
             Video(
               controller: _controller!,
-              controls: NoVideoControls,
+              controls: AdaptiveVideoControls,
               fill: Colors.black,
-              aspectRatio: 16 / 9,
             ),
           if (!_initialized && _error == null)
-            const Center(child: CircularProgressIndicator(color: Colors.white)),
+            const Center(
+                child: CircularProgressIndicator(color: Colors.white)),
         ],
       ),
     );

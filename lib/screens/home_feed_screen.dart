@@ -153,22 +153,27 @@ class _HomeFeedScreenState extends State<HomeFeedScreen>
     if (error != null) return ErrorView(message: error, onRetry: onRetry);
     if (videos.isEmpty) return const EmptyView();
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 260,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
-        childAspectRatio: 0.72,
+    return RefreshIndicator(
+      onRefresh: () async => onRetry(),
+      child: GridView.builder(
+        padding: const EdgeInsets.all(12),
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          // 卡片更小更密：手机 2 列、平板 3~4 列、电视 5~6 列
+          maxCrossAxisExtent: 200,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          // 封面 16:9 + 标题两行，整体略高于封面
+          childAspectRatio: 0.78,
+        ),
+        itemCount: videos.length,
+        itemBuilder: (context, index) {
+          final video = videos[index];
+          return VideoCard(
+            video: video,
+            onTap: () => _openVideo(video),
+          );
+        },
       ),
-      itemCount: videos.length,
-      itemBuilder: (context, index) {
-        final video = videos[index];
-        return VideoCard(
-          video: video,
-          onTap: () => _openVideo(video),
-        );
-      },
     );
   }
 
