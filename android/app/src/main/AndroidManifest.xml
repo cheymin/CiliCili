@@ -18,7 +18,7 @@
         android:usesCleartextTraffic="true"
         android:largeHeap="true">
         <activity
-            android:name="io.flutter.embedding.FlutterActivity"
+            android:name="io.flutter.embedding.android.FlutterActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:theme="@style/LaunchTheme"

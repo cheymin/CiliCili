@@ -112,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Padding(
             padding: const EdgeInsets.all(12),
             child: Text(
-              'v3.0.4',
+              'v3.0.5',
               style: TextStyle(
                 fontSize: 11,
                 color: cs.onSurfaceVariant.withOpacity(0.5),
