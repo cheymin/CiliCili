@@ -440,14 +440,5 @@ class _VideoPlayerWrapperState extends State<_VideoPlayerWrapper> {
   }
 }
 
-/// ChangeNotifierBuilder 辅助组件
-class ChangeNotifierBuilder<T extends ChangeNotifier> extends StatelessWidget {
-  final Widget Function(BuildContext, T) builder;
-
-  const ChangeNotifierBuilder({super.key, required this.builder});
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<T>(builder: (context, notifier, _) => builder(context, notifier));
-  }
-}
+// 使用 Consumer 替代自定义 ChangeNotifierBuilder
+// 已在顶部 import provider
