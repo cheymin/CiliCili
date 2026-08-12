@@ -89,126 +89,147 @@ Future<void> _initAppPath() async {
   appSupportDirPath = (await getApplicationSupportDirectory()).path;
 }
 
-void main() async {
-  ScaledWidgetsFlutterBinding.ensureInitialized();
-  MediaKit.ensureInitialized();
-  await _initAppPath();
-  try {
-    await GStorage.init();
-  } catch (e) {
-    await Utils.copyText(e.toString());
-    if (kDebugMode) debugPrint('GStorage init error: $e');
-    exit(0);
-  }
-  ScaledWidgetsFlutterBinding.instance.scaleFactor = Pref.uiScale;
-  await Future.wait([
-    _initDownPath(),
-    _initTmpPath(),
-    CacheManager.ensureInitialized(),
-  ]);
-  Get
-    ..lazyPut(AccountService.new)
-    ..lazyPut(DownloadService.new);
-  HttpOverrides.global = _CustomHttpOverrides();
+void main() {
+  // 添加错误边界，防止应用崩溃
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    if (kDebugMode) {
+      debugPrint('FlutterError: ${details.exceptionAsString()}');
+      debugPrint(details.stack?.toString() ?? '');
+    }
+  };
 
-  if (PlatformUtils.isMobile) {
-    if (Platform.isAndroid) MaxScreenSize.init();
+  PlatformDispatcher.instance.onError = (error, stack) {
+    if (kDebugMode) {
+      debugPrint('PlatformError: $error');
+      debugPrint(stack.toString());
+    }
+    return true;
+  };
+
+  runZonedGuarded<Future<void>>(() async {
+    ScaledWidgetsFlutterBinding.ensureInitialized();
+    MediaKit.ensureInitialized();
+    await _initAppPath();
+    try {
+      await GStorage.init();
+    } catch (e) {
+      await Utils.copyText(e.toString());
+      if (kDebugMode) debugPrint('GStorage init error: $e');
+      exit(0);
+    }
+    ScaledWidgetsFlutterBinding.instance.scaleFactor = Pref.uiScale;
     await Future.wait([
-      if (Pref.horizontalScreen) ?fullMode() else ?portraitUpMode(),
-      setupServiceLocator(),
+      _initDownPath(),
+      _initTmpPath(),
+      CacheManager.ensureInitialized(),
     ]);
-  } else if (Platform.isWindows) {
-    if (await WebViewEnvironment.getAvailableVersion() != null) {
-      webViewEnvironment = await WebViewEnvironment.create(
-        settings: WebViewEnvironmentSettings(
-          userDataFolder: path.join(appSupportDirPath, 'flutter_inappwebview'),
+    Get
+      ..lazyPut(AccountService.new)
+      ..lazyPut(DownloadService.new);
+    HttpOverrides.global = _CustomHttpOverrides();
+
+    if (PlatformUtils.isMobile) {
+      if (Platform.isAndroid) MaxScreenSize.init();
+      await Future.wait([
+        if (Pref.horizontalScreen) ?fullMode() else ?portraitUpMode(),
+        setupServiceLocator(),
+      ]);
+    } else if (Platform.isWindows) {
+      if (await WebViewEnvironment.getAvailableVersion() != null) {
+        webViewEnvironment = await WebViewEnvironment.create(
+          settings: WebViewEnvironmentSettings(
+            userDataFolder:
+                path.join(appSupportDirPath, 'flutter_inappwebview'),
+          ),
+        );
+      }
+    } else if (Platform.isMacOS) {
+      await setupServiceLocator();
+    }
+
+    Request();
+    Request.setCookie();
+    RequestUtils.syncHistoryStatus();
+
+    SmartDialog.config.toast = SmartConfigToast(displayType: .onlyRefresh);
+
+    if (PlatformUtils.isMobile) {
+      SystemChrome.setEnabledSystemUIMode(.edgeToEdge);
+      SystemChrome.setSystemUIOverlayStyle(
+        const SystemUiOverlayStyle(
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarDividerColor: Colors.transparent,
+          statusBarColor: Colors.transparent,
+          systemNavigationBarContrastEnforced: false,
         ),
       );
-    }
-  } else if (Platform.isMacOS) {
-    await setupServiceLocator();
-  }
-
-  Request();
-  Request.setCookie();
-  RequestUtils.syncHistoryStatus();
-
-  SmartDialog.config.toast = SmartConfigToast(displayType: .onlyRefresh);
-
-  if (PlatformUtils.isMobile) {
-    SystemChrome.setEnabledSystemUIMode(.edgeToEdge);
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        systemNavigationBarColor: Colors.transparent,
-        systemNavigationBarDividerColor: Colors.transparent,
-        statusBarColor: Colors.transparent,
-        systemNavigationBarContrastEnforced: false,
-      ),
-    );
-    if (Platform.isAndroid) {
-      FlutterDisplayMode.supported.then((mode) {
-        final String? storageDisplay = GStorage.setting.get(
-          SettingBoxKey.displayMode,
-        );
-        DisplayMode? displayMode;
-        if (storageDisplay != null) {
-          displayMode = mode.firstWhereOrNull(
-            (e) => e.toString() == storageDisplay,
+      if (Platform.isAndroid) {
+        FlutterDisplayMode.supported.then((mode) {
+          final String? storageDisplay = GStorage.setting.get(
+            SettingBoxKey.displayMode,
           );
-        }
-        FlutterDisplayMode.setPreferredMode(displayMode ?? DisplayMode.auto);
-      });
-    } else {
-      ScreenBrightnessPlatform.instance.setAutoReset(false);
-    }
-  } else if (PlatformUtils.isDesktop) {
-    await windowManager.ensureInitialized();
+          DisplayMode? displayMode;
+          if (storageDisplay != null) {
+            displayMode = mode.firstWhereOrNull(
+              (e) => e.toString() == storageDisplay,
+            );
+          }
+          FlutterDisplayMode.setPreferredMode(displayMode ?? DisplayMode.auto);
+        });
+      } else {
+        ScreenBrightnessPlatform.instance.setAutoReset(false);
+      }
+    } else if (PlatformUtils.isDesktop) {
+      await windowManager.ensureInitialized();
 
-    final windowOptions = WindowOptions(
-      minimumSize: const Size(400, 720),
-      skipTaskbar: false,
-      titleBarStyle: Pref.showWindowTitleBar
-          ? TitleBarStyle.normal
-          : TitleBarStyle.hidden,
-      title: Constants.appName,
-    );
-    windowManager.waitUntilReadyToShow(windowOptions, () async {
-      final windowSize = Pref.windowSize;
-      await windowManager.setBounds(
-        await calcWindowPosition(windowSize) & windowSize,
+      final windowOptions = WindowOptions(
+        minimumSize: const Size(400, 720),
+        skipTaskbar: false,
+        titleBarStyle:
+            Pref.showWindowTitleBar ? TitleBarStyle.normal : TitleBarStyle.hidden,
+        title: Constants.appName,
       );
-      if (Pref.isWindowMaximized) await windowManager.maximize();
-      await windowManager.show();
-      await windowManager.focus();
-    });
-  }
+      windowManager.waitUntilReadyToShow(windowOptions, () async {
+        final windowSize = Pref.windowSize;
+        await windowManager.setBounds(
+          await calcWindowPosition(windowSize) & windowSize,
+        );
+        if (Pref.isWindowMaximized) await windowManager.maximize();
+        await windowManager.show();
+        await windowManager.focus();
+      });
+    }
 
-  if (Pref.dynamicColor) {
-    await MyApp.initPlatformState();
-  }
+    if (Pref.dynamicColor) {
+      await MyApp.initPlatformState();
+    }
 
-  if (Pref.enableLog) {
-    // 异常捕获 logo记录
-    final customParameters = {
-      'Build Time': DateFormatUtils.format(
-        BuildConfig.buildTime,
-        format: DateFormatUtils.longFormatDs,
-      ),
-      'Commit Hash': BuildConfig.commitHash,
-      'MPV Api Version':
-          '${NativePlayer.apiVersion >> 16}.${NativePlayer.apiVersion & 0xFFFF}',
-    };
-    final fileHandler = await JsonFileHandler.init();
+    if (Pref.enableLog) {
+      // 异常捕获 logo记录
+      final customParameters = {
+        'Build Time': DateFormatUtils.format(
+          BuildConfig.buildTime,
+          format: DateFormatUtils.longFormatDs,
+        ),
+        'Commit Hash': BuildConfig.commitHash,
+        'MPV Api Version':
+            '${NativePlayer.apiVersion >> 16}.${NativePlayer.apiVersion & 0xFFFF}',
+      };
+      final fileHandler = await JsonFileHandler.init();
 
-    Catcher2(
-      [?fileHandler, const ConsoleHandler()],
-      const MyApp(),
-      logger: logger,
-      customParameters: customParameters,
-    );
-  } else {
-    runApp(const MyApp());
-  }
+      Catcher2(
+        [?fileHandler, const ConsoleHandler()],
+        const MyApp(),
+        logger: logger,
+        customParameters: customParameters,
+      );
+    } else {
+      runApp(const MyApp());
+    }
+  }, (Object error, StackTrace stack) {
+    debugPrint('Zoned Error: $error\n$stack');
+  });
 }
 
 class MyApp extends StatelessWidget {
