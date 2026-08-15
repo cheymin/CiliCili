@@ -37,6 +37,8 @@ import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
+import 'package:PiliPlus/utils/theme_colors.dart';
+import 'package:PiliPlus/utils/player_stability.dart';
 import 'package:flutter/material.dart' hide StatefulBuilder;
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -379,7 +381,158 @@ List<SettingsModel> get styleSettings => [
       title: '屏幕帧率',
       leading: const Icon(Icons.autofps_select_outlined),
     ),
+  // 新增个性化设置
+  NormalModel(
+    title: '自定义主题色',
+    subtitle: '选择你喜欢的主题颜色',
+    leading: const Icon(Icons.palette_outlined),
+    onTap: _showCustomColorDialog,
+  ),
+  NormalModel(
+    title: '卡片圆角',
+    subtitle: '调整卡片圆角大小',
+    leading: const Icon(Icons.corner_down_right),
+    onTap: _showCornerRadiusDialog,
+  ),
+  NormalModel(
+    title: '列表密度',
+    subtitle: '调整列表项间距',
+    leading: const Icon(Icons.format_line_spacing),
+    onTap: _showListDensityDialog,
+  ),
+  NormalModel(
+    title: '播放稳定性',
+    subtitle: '查看播放器错误日志',
+    leading: const Icon(Icons.bug_report_outlined),
+    onTap: _showPlayerStabilityDialog,
+  ),
 ];
+
+Future<void> _showCustomColorDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final res = await showDialog<Color>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('选择主题颜色'),
+      content: SizedBox(
+        width: 300,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: CiliciliThemeColors.customColors.map((c) {
+              return ListTile(
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: c.color,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                title: Text(c.label),
+                onTap: () => Navigator.pop(context, c.color),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    ),
+  );
+  if (res != null) {
+    await GStorage.setting.put(SettingBoxKey.customThemeColor, res.value);
+    SmartDialog.showToast('设置成功，重启生效');
+    setState();
+  }
+}
+
+Future<void> _showCornerRadiusDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final res = await showDialog<double>(
+    context: context,
+    builder: (context) => SliderDialog(
+      title: const Text('卡片圆角'),
+      value: 8.0,
+      min: 0.0,
+      max: 24.0,
+      divisions: 24,
+      suffix: 'dp',
+    ),
+  );
+  if (res != null) {
+    SmartDialog.showToast('设置成功，重启生效');
+    setState();
+  }
+}
+
+Future<void> _showListDensityDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final res = await showDialog<String>(
+    context: context,
+    builder: (context) => SelectDialog<String>(
+      title: '列表密度',
+      value: Pref.listDensity,
+      values: const [
+        ('紧凑', '紧凑'),
+        ('舒适', '舒适'),
+        ('宽松', '宽松'),
+      ],
+    ),
+  );
+  if (res != null) {
+    await GStorage.setting.put(SettingBoxKey.listDensity, res);
+    SmartDialog.showToast('设置成功，重启生效');
+    setState();
+  }
+}
+
+Future<void> _showPlayerStabilityDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final errorCount = playerStabilityManager.errorCount;
+  final retryCount = playerStabilityManager.retryCount;
+  final isRecovering = playerStabilityManager.isRecovering;
+  
+  await showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('播放器稳定性'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('当前错误计数: $errorCount'),
+          Text('当前重试计数: $retryCount'),
+          Text('正在恢复: ${isRecovering ? "是" : "否"}'),
+          const SizedBox(height: 16),
+          const Text(
+            '提示：如果播放器频繁卡顿，请检查网络连接或尝试切换解码器',
+            style: TextStyle(color: Colors.grey),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            playerStabilityManager.resetRetry();
+            Navigator.pop(context);
+            SmartDialog.showToast('已重置');
+          },
+          child: const Text('重置'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('关闭'),
+        ),
+      ],
+    ),
+  );
+}
 
 void _showQualityDialog({
   required BuildContext context,

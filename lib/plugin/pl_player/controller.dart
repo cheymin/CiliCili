@@ -48,6 +48,9 @@ import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/utils/player_stability.dart';
+import 'package:PiliPlus/utils/player_exceptions.dart';
+import 'package:PiliPlus/utils/network_timeout.dart';
 import 'package:archive/archive.dart' show getCrc32;
 import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:easy_debounce/easy_throttle.dart';
@@ -917,6 +920,9 @@ class PlPlayerController with BlockConfigMixin {
       stream.playing.listen((bool playing) {
         WakelockPlus.toggle(enable: playing);
         if (playing) {
+          // 取消缓冲超时
+          playerStabilityManager.cancelBufferTimeout();
+          
           if (_isAutoEnterPip) {
             if (_isCurrVideoPage) {
               enterPip(autoEnter: true);
@@ -925,7 +931,11 @@ class PlPlayerController with BlockConfigMixin {
             }
           }
           playerStatus.value = .playing;
+          
+          // 开始播放超时检测
+          playerStabilityManager.startPlayTimeout();
         } else {
+          playerStabilityManager.cancelPlayTimeout();
           _disableAutoEnterPip();
           playerStatus.value = .paused;
         }
@@ -988,6 +998,13 @@ class PlPlayerController with BlockConfigMixin {
           buffering,
           isLive,
         );
+        
+        // 缓冲超时检测
+        if (buffering) {
+          playerStabilityManager.startBufferTimeout();
+        } else {
+          playerStabilityManager.cancelBufferTimeout();
+        }
       }),
       if (kDebugMode)
         stream.log.listen(((PlayerLog log) {
@@ -1002,6 +1019,10 @@ class PlPlayerController with BlockConfigMixin {
             event.startsWith("Failed to open file")) {
           return;
         }
+        
+        // 记录错误到稳定性管理器
+        playerStabilityManager.recordError(event);
+        
         if (isLive) {
           if (event.startsWith('tcp: ffurl_read returned ') ||
               event.startsWith("Failed to open https://") ||
@@ -1020,12 +1041,6 @@ class PlPlayerController with BlockConfigMixin {
             const Duration(milliseconds: 10000),
             () {
               Future.delayed(const Duration(milliseconds: 3000), () {
-                // if (kDebugMode) {
-                //   debugPrint("isBuffering.value: ${isBuffering.value}");
-                // }
-                // if (kDebugMode) {
-                //   debugPrint("_buffered.value: ${_buffered.value}");
-                // }
                 if (isBuffering.value && buffered.value == 0) {
                   SmartDialog.showToast(
                     '视频链接打开失败，重试中',
@@ -1046,7 +1061,11 @@ class PlPlayerController with BlockConfigMixin {
             return;
           }
           Utils.reportError(event);
-          // SmartDialog.showToast('视频加载错误, $event');
+          // 增强错误提示
+          if (event.contains('timeout') || event.contains('timed out')) {
+            SmartDialog.showToast('播放超时，请检查网络连接', 
+                displayTime: const Duration(seconds: 2));
+          }
         }
       }),
     ];
@@ -1599,6 +1618,10 @@ class PlPlayerController with BlockConfigMixin {
     if (kDebugMode) {
       debugPrint('dispose player');
     }
+    
+    // 清理稳定性管理器
+    playerStabilityManager.dispose();
+    
     _videoPlayerController?.dispose();
     _videoPlayerController = null;
     _videoController = null;

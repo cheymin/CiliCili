@@ -25,6 +25,7 @@ jobs:
         with:
           channel: stable
           flutter-version-file: pubspec.yaml
+          cache: true
 
       - name: Apply Patch
         shell: pwsh
@@ -34,11 +35,6 @@ jobs:
         run: |
           dart pub global activate fastforge
           choco install innosetup
-
-      - name: Add Chinese language file for Inno Setup
-        run: |
-          Copy-Item "windows/packaging/exe/ChineseSimplified.isl" "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseSimplified.isl"
-        shell: pwsh
 
       - name: Set and Extract version
         shell: pwsh
@@ -50,36 +46,44 @@ jobs:
 
       - name: Prepare Upload
         run: |
-          mkdir -p Release/PiliPlus-Win
-          mkdir -p PiliPlus-Win-Setup
-          mv build/windows/x64/runner/Release/* Release/PiliPlus-Win/
-          mv dist/**/*.exe PiliPlus-Win-Setup/PiliPlus_windows_${{env.version}}_x64_setup.exe
+          mkdir -p Release/cilicili-Win
+          mkdir -p cilicili-Win-Setup
+          mv build/windows/x64/runner/Release/* Release/cilicili-Win/
+          mv dist/**/*.exe cilicili-Win-Setup/cilicili_windows_${{env.version}}_x64_setup.exe
 
       - name: Compress
         run: |
-          Compress-Archive -Path "Release/PiliPlus-Win" -DestinationPath "PiliPlus_windows_${{env.version}}_x64_portable.zip"
+          Compress-Archive -Path "Release/cilicili-Win" -DestinationPath "cilicili_windows_${{env.version}}_x64_portable.zip"
         shell: pwsh
 
-      - name: Release
+      - name: Create Release
         if: ${{ github.event.inputs.tag != '' }}
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.event.inputs.tag }}
           name: ${{ github.event.inputs.tag }}
+          body: |
+            ## cilicili ${{ github.event.inputs.tag }} Windows x64
+            
+            🪟 Windows 版本
+            
+            ### 下载
+            - **安装版**: cilicili_windows_*_x64_setup.exe
+            - **便携版**: cilicili_windows_*_x64_portable.zip
           files: |
-            PiliPlus_windows_*.zip
-            PiliPlus-Win-Setup/PiliPlus_windows_*.exe
+            cilicili_windows_*.zip
+            cilicili-Win-Setup/cilicili_windows_*.exe
 
       - name: Upload windows file release
         uses: actions/upload-artifact@v7
         with:
           archive: false
           name: Windows-file-x64-release
-          path: PiliPlus_windows_*.zip
+          path: cilicili_windows_*.zip
 
       - name: Upload windows setup release
         uses: actions/upload-artifact@v7
         with:
           archive: false
           name: Windows-setup-x64-release
-          path: PiliPlus-Win-Setup/PiliPlus_windows_*.exe
+          path: cilicili-Win-Setup/cilicili_windows_*.exe
